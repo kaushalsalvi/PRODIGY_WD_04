@@ -1,50 +1,81 @@
-const api = {
-    key: "fcc8de7015bbb202209bbf0261babf4c",
-    base: "https://api.openweathermap.org/data/2.5/"
-  }
-  
-  const searchbox = document.querySelector('.search-box');
-  searchbox.addEventListener('keypress', setQuery);
-  
-  function setQuery(evt) {
-    if (evt.keyCode == 13) {
-      getResults(searchbox.value);
+const apiKey = '32fd04046457be23ef2ce4d1d12d1023'
+
+
+
+async function fetchWeatherData(city) {
+    try {
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`
+        );
+
+        if (!response.ok) {
+            throw new Error("Unable to fetch weather data");
+        }
+        const data = await response.json();
+        console.log(data);
+        // console.log(data.main.temp);
+        // console.log(data.name);
+        // console.log(data.wind.speed);
+        // console.log(data.main.humidity);
+        // console.log(data.visibility);
+        updateWeatherUI(data);
+    } catch (error) {
+        console.error(error);
     }
-  }
-  
-  function getResults (query) {
-    fetch(`${api.base}weather?q=${query}&units=metric&APPID=${api.key}`)
-      .then(weather => {
-        return weather.json();
-      }).then(displayResults);
-  }
-  
-  function displayResults (weather) {
-    let city = document.querySelector('.location .city');
-    city.innerText = `${weather.name}, ${weather.sys.country}`;
-  
-    let now = new Date();
-    let date = document.querySelector('.location .date');
-    date.innerText = dateBuilder(now);
-  
-    let temp = document.querySelector('.current .temp');
-    temp.innerHTML = `${Math.round(weather.main.temp)}<span>°c</span>`;
-  
-    let weather_el = document.querySelector('.current .weather');
-    weather_el.innerText = weather.weather[0].main;
-  
-    let hilow = document.querySelector('.hi-low');
-    hilow.innerText = `${Math.round(weather.main.temp_min)}°c / ${Math.round(weather.main.temp_max)}°c`;
-  }
-  
-  function dateBuilder (d) {
-    let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    let days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  
-    let day = days[d.getDay()];
-    let date = d.getDate();
-    let month = months[d.getMonth()];
-    let year = d.getFullYear();
-  
-    return `${day} ${date} ${month} ${year}`;
-  }
+}
+
+const cityElement = document.querySelector(".city");
+const temperature = document.querySelector(".temp");
+const windSpeed = document.querySelector(".wind-speed");
+const humidity = document.querySelector(".humidity");
+const visibility = document.querySelector(".visibility-distance");
+
+const descriptionText = document.querySelector(".description-text");
+const date = document.querySelector(".date");
+const descriptionIcon = document.querySelector(".description i");
+
+// fetchWeatherData();
+
+function updateWeatherUI(data) {
+    cityElement.textContent = data.name;
+    temperature.textContent = `${Math.round(data.main.temp)}`;
+    windSpeed.textContent = `${data.wind.speed} km/h`;
+    humidity.textContent = `${data.main.humidity}%`;
+    visibility.textContent = `${data.visibility / 1000} km`;
+    descriptionText.textContent = data.weather[0].description;
+
+    const currentDate = new Date();
+    date.textContent = currentDate.toDateString();
+    const weatherIconName = getWeatherIconName(data.weather[0].main);
+    descriptionIcon.innerHTML = `<i class="material-icons">${weatherIconName}</i>`;
+}
+
+const formElement = document.querySelector(".search-form");
+const inputElement = document.querySelector(".city-input");
+
+formElement.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const city = inputElement.value;
+    if (city !== "") {
+        fetchWeatherData(city);
+        inputElement.value = "";
+    }
+});
+
+function getWeatherIconName(weatherCondition) {
+    const iconMap = {
+        Clear: "wb_sunny",
+        Clouds: "wb_cloudy",
+        Rain: "umbrella",
+        Thunderstorm: "flash_on",
+        Drizzle: "grain",
+        Snow: "ac_unit",
+        Mist: "cloud",
+        Smoke: "cloud",
+        Haze: "cloud",
+        Fog: "cloud",
+    };
+
+    return iconMap[weatherCondition] || "help";
+}
